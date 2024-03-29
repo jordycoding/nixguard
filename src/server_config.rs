@@ -3,13 +3,13 @@ use std::{collections::HashMap, fs, path::Path, process::Command};
 
 pub fn add_client(name: &str) {
     let path = Path::new("config.toml");
-    let mut config: Option<ServerConfig> = None;
+    let mut server_config: Option<ServerConfig> = None;
     if !path.exists() {
-        config = Some(generate_base_config());
+        server_config = Some(generate_base_config());
     } else {
         let config_string =
             fs::read_to_string("config.toml").expect("Error reading configuration file");
-        config = Some(
+        server_config = Some(
             toml::from_str(&config_string)
                 .expect("Something went wrong parsing the configuration file"),
         );
@@ -18,33 +18,28 @@ pub fn add_client(name: &str) {
         public_key: "test pubkey".to_string(),
         allowed_IPs: vec!["test".to_string()],
     };
-    match config {
-        Some(config) => {
-            let interface_config = config.configs.get("wg0");
-            let new_config: Option<InterfaceConfig> = match interface_config {
-                Some(wg_config) => {
-                    let peers = match wg_config.peers.clone() {
-                        Some(wg_peers) => {
-                            let mut peers_clone = wg_peers.clone();
-                            peers_clone.push(peer_config);
-                            peers_clone
-                        }
-                        None => {
-                            vec![peer_config]
-                        }
-                    };
-                    let mut clone = wg_config.clone();
-                    clone.peers = Some(peers);
-                    Some(clone)
-                }
-                None => None,
-            };
-            println!("{}", toml::to_string(&new_config.unwrap()).unwrap());
-        }
-        None => {
-            println!("Cant add client")
-        }
-    }
+    if let Some(ref mut config) = server_config {
+        let interface_config = config.configs.get("wg0");
+        match interface_config {
+            Some(wg_config) => {
+                let peers = match wg_config.peers.clone() {
+                    Some(wg_peers) => {
+                        let mut peers_clone = wg_peers.clone();
+                        peers_clone.push(peer_config);
+                        peers_clone
+                    }
+                    None => {
+                        vec![peer_config]
+                    }
+                };
+                let mut clone = wg_config.clone();
+                clone.peers = Some(peers);
+                (*config).configs = HashMap::from([("wg0".to_owned(), clone)]);
+            }
+            None => {}
+        };
+    };
+    println!("{}", toml::to_string(&server_config).unwrap());
 }
 
 pub fn generate_base_config() -> ServerConfig {
