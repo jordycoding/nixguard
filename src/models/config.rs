@@ -8,12 +8,21 @@ pub struct ServerConfig {
     pub configs: HashMap<String, InterfaceConfig>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct InterfaceConfig {
-    // ips: Vec<&str>,
-    // listenPort: usize,
-    // postSetup: &str,
+    pub ips: Vec<String>,
+    pub listen_port: usize,
+    // pub postSetup: String,
     pub subnet: [u8; 3],
     pub current_ip: u8,
-    pub privateKey: String,
+    pub private_key: String,
+    pub peers: Option<Vec<PeerConfig>>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PeerConfig {
+    pub public_key: String,
+    pub allowed_IPs: Vec<String>,
 }
