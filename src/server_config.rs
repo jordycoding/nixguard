@@ -34,21 +34,24 @@ pub fn add_client() {
         println!("This is the servers private key, please store this in the specified place, it won't be saved anywhere else");
         println!(
             "{}",
-            &server_keypair.clone().unwrap().0.on_red().black().bold()
+            &server_keypair.clone().unwrap().1.on_red().black().bold()
         );
     } else {
         server_config = Some(read_config());
     }
 
     let name = Text::new("What is the clients name?").prompt();
+    let server_ip = Text::new("What is the servers external ip?").prompt();
     if let Some(ref mut config) = server_config {
         let netdev = config.netdevs.get("50-wg0");
         if let Ok(valid_name) = name {
             if let Some(netdev_config) = netdev {
+                let ip = format!("10.100.0.{}", config.app_config.current_ip + 1);
                 let client_config = generate_client_config(
                     client_priv_key,
                     &config.app_config.public_key,
-                    "0.0.0.0",
+                    &ip,
+                    &server_ip.expect("Invalid ip"),
                 );
                 client_config
                     .write_to_file(format!("client-{}.conf", valid_name))
@@ -56,7 +59,7 @@ pub fn add_client() {
 
                 let wireguard_peer_config = WireguardPeerConfig {
                     public_key: client_pub_key,
-                    allowed_ips: vec![format!("10.100.0.{}", config.app_config.current_ip + 1)],
+                    allowed_ips: vec![ip],
                 };
                 let wireguard_peer = WireguardPeer {
                     wireguard_peer_config,
