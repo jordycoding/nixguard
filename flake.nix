@@ -23,7 +23,7 @@
               inherit version;
               src = ./.;
 
-              cargoHash = "";
+              cargoHash = "sha256-gzkUt+N+ljZ6TPFBEMMJYe4hEtSHMTeJSn/SqN0Y0MQ=";
             };
           };
 
