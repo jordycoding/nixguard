@@ -6,30 +6,72 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct ServerConfig {
     pub app_config: AppConfig,
-    pub configs: HashMap<String, InterfaceConfig>,
+    pub netdevs: HashMap<String, NetDev>,
+    pub networks: HashMap<String, Network>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct InterfaceConfig {
-    pub ips: Vec<String>,
-    pub listen_port: usize,
-    // pub postSetup: String,
-    pub private_key_file: String,
-    pub peers: Option<Vec<PeerConfig>>,
+pub struct NetDev {
+    pub netdev_config: NetDevConfig,
+    pub wireguard_config: WireguardConfig,
+    pub wireguard_peers: Option<Vec<WireguardPeer>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct PeerConfig {
+#[serde(rename_all = "PascalCase")]
+pub struct NetDevConfig {
+    pub kind: String,
     pub name: String,
+    #[serde(rename = "MTUBytes")]
+    pub mtu_bytes: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "PascalCase")]
+pub struct WireguardConfig {
+    pub private_key_file: String,
+    pub listen_port: u16,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WireguardPeer {
+    pub wireguard_peer_config: WireguardPeerConfig,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "PascalCase")]
+pub struct WireguardPeerConfig {
     pub public_key: String,
-    pub allowed_IPs: Vec<String>,
+    #[serde(rename = "AllowedIPs")]
+    pub allowed_ips: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Network {
+    pub match_config: MatchConfig,
+    pub address: Vec<String>,
+    pub network_config: NetworkConfig,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "PascalCase")]
+pub struct MatchConfig {
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct NetworkConfig {
+    #[serde(rename = "IPMasquerade")]
+    pub ip_masquerade: String,
+    #[serde(rename = "IPForward")]
+    pub ip_forward: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AppConfig {
-    pub subnet: [u8; 3],
     pub current_ip: u8,
     pub public_key: String,
 }

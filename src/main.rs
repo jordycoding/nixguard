@@ -3,7 +3,6 @@ mod keys;
 mod models;
 mod server_config;
 
-use models::config::InterfaceConfig;
 use server_config::add_client;
 use std::{collections::HashMap, process::Command};
 
