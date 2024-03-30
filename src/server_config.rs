@@ -1,3 +1,6 @@
+use colored::Colorize;
+use inquire::Text;
+
 use crate::{
     client_config::generate_client_config,
     keys::generate_keypair,
@@ -9,12 +12,11 @@ use crate::{
 use std::{
     collections::HashMap,
     fs::{self, write},
-    io::Write,
     path::Path,
     process::{Command, Stdio},
 };
 
-pub fn add_client(name: &str) {
+pub fn add_client() {
     let path = Path::new("config.toml");
     let mut server_config: Option<ServerConfig> = None;
     let mut server_keypair: Option<(String, String)> = None;
@@ -24,44 +26,62 @@ pub fn add_client(name: &str) {
     if !path.exists() {
         server_keypair = Some(generate_keypair());
         println!("No configuration found, generating base config");
+        let priv_path = Text::new("What path will the server secret key be stored at?").prompt();
         server_config = Some(generate_base_config(
             &server_keypair.clone().unwrap().0,
-            "test",
+            &priv_path.expect("Invalid path"),
         ));
+        println!("This is the servers private key, please store this in the specified place, it won't be saved anywhere else");
+        println!(
+            "{}",
+            &server_keypair.clone().unwrap().0.on_red().black().bold()
+        );
     } else {
         server_config = Some(read_config());
     }
 
+    let name = Text::new("What is the clients name?").prompt();
     if let Some(ref mut config) = server_config {
         let netdev = config.netdevs.get("50-wg0");
-        if let Some(netdev_config) = netdev {
-            let client_config =
-                generate_client_config(client_priv_key, &config.app_config.public_key, "0.0.0.0");
-            client_config.write_to_file("client.conf").unwrap();
+        if let Ok(valid_name) = name {
+            if let Some(netdev_config) = netdev {
+                let client_config = generate_client_config(
+                    client_priv_key,
+                    &config.app_config.public_key,
+                    "0.0.0.0",
+                );
+                client_config
+                    .write_to_file(format!("client-{}.conf", valid_name))
+                    .unwrap();
 
-            let wireguard_peer_config = WireguardPeerConfig {
-                public_key: client_pub_key,
-                allowed_ips: vec![format!("10.100.0.{}", config.app_config.current_ip + 1)],
-            };
-            let wireguard_peer = WireguardPeer {
-                wireguard_peer_config,
-            };
+                let wireguard_peer_config = WireguardPeerConfig {
+                    public_key: client_pub_key,
+                    allowed_ips: vec![format!("10.100.0.{}", config.app_config.current_ip + 1)],
+                };
+                let wireguard_peer = WireguardPeer {
+                    wireguard_peer_config,
+                };
 
-            let peers = match netdev_config.wireguard_peers.clone() {
-                Some(wg_peers) => {
-                    let mut peers_clone = wg_peers.clone();
-                    peers_clone.push(wireguard_peer);
-                    peers_clone
-                }
-                None => {
-                    vec![wireguard_peer]
-                }
-            };
-            println!("Generating config for client: {}", name);
-            let mut clone = netdev_config.clone();
-            clone.wireguard_peers = Some(peers);
-            let new_netdevs = HashMap::from([("50-wg0".to_owned(), clone)]);
-            config.netdevs = new_netdevs;
+                config.app_config.current_ip += 1;
+
+                let peers = match netdev_config.wireguard_peers.clone() {
+                    Some(wg_peers) => {
+                        let mut peers_clone = wg_peers.clone();
+                        peers_clone.push(wireguard_peer);
+                        peers_clone
+                    }
+                    None => {
+                        vec![wireguard_peer]
+                    }
+                };
+                println!("Generating config for client: {}", valid_name);
+                let mut clone = netdev_config.clone();
+                clone.wireguard_peers = Some(peers);
+                let new_netdevs = HashMap::from([("50-wg0".to_owned(), clone)]);
+                config.netdevs = new_netdevs;
+            }
+        } else {
+            println!("Invalid name");
         }
     }
     write("config.toml", toml::to_string(&server_config).unwrap());
@@ -78,8 +98,8 @@ pub fn generate_base_config(public_key: &str, priv_key_file: &str) -> ServerConf
         listen_port: 51820,
     };
     let netdev = NetDev {
-        netdev_config: netdev_config,
-        wireguard_config: wireguard_config,
+        netdev_config,
+        wireguard_config,
         wireguard_peers: None,
     };
 
@@ -91,22 +111,22 @@ pub fn generate_base_config(public_key: &str, priv_key_file: &str) -> ServerConf
         ip_forward: true,
     };
     let network = Network {
-        match_config: match_config,
+        match_config,
         address: vec!["10.100.0.1/24".to_owned()],
-        network_config: network_config,
+        network_config,
     };
 
     let app_config = AppConfig {
-        current_ip: 2,
+        current_ip: 1,
         public_key: public_key.to_owned(),
     };
 
     let netdevs = HashMap::from([("50-wg0".to_string(), netdev)]);
     let networks = HashMap::from([("wg0".to_string(), network)]);
     ServerConfig {
-        app_config: app_config,
-        netdevs: netdevs,
-        networks: networks,
+        app_config,
+        netdevs,
+        networks,
     }
 }
 

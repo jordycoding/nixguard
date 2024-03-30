@@ -21,10 +21,7 @@ struct Cli {
 #[command(arg_required_else_help = true)]
 enum Commands {
     /// Add client
-    Add {
-        #[arg(short, long)]
-        name: String,
-    },
+    Add,
     /// List all clients
     List,
 }
@@ -33,13 +30,13 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::Add { name }) => {
+        Some(Commands::Add) => {
             // let output = Command::new("wg")
             //     .arg("genkey")
             //     .output()
             //     .expect("Error generating wireguard key");
 
-            add_client(name);
+            add_client();
         }
         Some(Commands::List) => {}
         None => {}
