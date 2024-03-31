@@ -19,7 +19,7 @@ pub fn generate_client_config(
         .set("DNS", dns);
     conf.with_section(Some("Peer"))
         .set("PublicKey", server_public_key)
-        .set("AllowedIPs", "0.0.0.0")
+        .set("AllowedIPs", "0.0.0.0/0")
         .set("Endpoint", server_ip);
     conf
 }
