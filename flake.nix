@@ -22,7 +22,6 @@
               pname = "nixguard";
               inherit version;
               src = ./.;
-
               cargoHash = "sha256-lUhTaYNtgAD88SL3FWyclNaHZ7qI4rNGN5/Gn19huZ4=";
             };
           };
