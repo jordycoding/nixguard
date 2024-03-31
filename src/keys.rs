@@ -24,6 +24,10 @@ pub fn generate_keypair() -> (String, String) {
             .expect("Error generating public key")
             .stdout,
     )
-    .unwrap();
-    (String::from_utf8(priv_key).unwrap(), output)
+    .unwrap()
+    .replace('\n', "");
+    (
+        String::from_utf8(priv_key).unwrap().replace('\n', ""),
+        output,
+    )
 }

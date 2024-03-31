@@ -15,7 +15,7 @@ pub fn generate_client_config(
     conf.with_section(Some("Interface"))
         .set("PrivateKey", client_private_key)
         .set("Address", ip_addr)
-        .set("DNS", "1.1.1");
+        .set("DNS", server_ip);
     conf.with_section(Some("Peer"))
         .set("PublicKey", server_public_key)
         .set("AllowedIPs", "0.0.0.0")
