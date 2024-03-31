@@ -10,6 +10,8 @@ pub fn generate_keypair() -> (String, String) {
         .expect("Error generating private key")
         .stdout;
 
+    let priv_key_string = String::from_utf8(priv_key).unwrap().replace('\n', "");
+
     let mut command = Command::new("wg")
         .arg("pubkey")
         .stdin(Stdio::piped())
@@ -17,7 +19,7 @@ pub fn generate_keypair() -> (String, String) {
         .spawn()
         .expect("Failed to spawn child process");
     let command_stdin = command.stdin.as_mut().unwrap();
-    command_stdin.write_all(&priv_key);
+    command_stdin.write_all(priv_key_string.as_bytes());
     let output = String::from_utf8(
         command
             .wait_with_output()
@@ -26,8 +28,5 @@ pub fn generate_keypair() -> (String, String) {
     )
     .unwrap()
     .replace('\n', "");
-    (
-        String::from_utf8(priv_key).unwrap().replace('\n', ""),
-        output,
-    )
+    (priv_key_string, output)
 }

@@ -29,20 +29,23 @@ pub fn add_client() {
         println!("No configuration found, generating base config");
         let priv_path = Text::new("What path will the server secret key be stored at?").prompt();
         server_config = Some(generate_base_config(
-            &server_keypair.clone().unwrap().0,
+            &server_keypair.clone().unwrap().1,
             &priv_path.expect("Invalid path"),
         ));
         println!("This is the servers private key, please store this in the specified place, it won't be saved anywhere else");
         println!(
             "{}",
-            &server_keypair.clone().unwrap().1.on_red().black().bold()
+            &server_keypair.clone().unwrap().0.on_red().black().bold()
         );
     } else {
         server_config = Some(read_config());
     }
 
     let name = Text::new("What is the clients name?").prompt();
-    let server_ip = Text::new("What is the servers external ip?").prompt();
+    let server_ip =
+        Text::new("What is the servers external ip/hostname? Include the port(should be 51820)")
+            .prompt();
+    let dns = Text::new("What DNS server should the client use?").prompt();
     let default_path = match env::var("HOME") {
         Ok(val) => val,
         Err(e) => ".".to_string(),
@@ -60,6 +63,7 @@ pub fn add_client() {
                     &config.app_config.public_key,
                     &ip,
                     &server_ip.expect("Invalid ip"),
+                    &dns.expect("Invalid DNS"),
                 );
                 client_config
                     .write_to_file(format!(
