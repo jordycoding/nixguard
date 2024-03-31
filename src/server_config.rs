@@ -11,6 +11,7 @@ use crate::{
 };
 use std::{
     collections::HashMap,
+    env,
     fs::{self, write},
     path::Path,
     process::{Command, Stdio},
@@ -42,6 +43,13 @@ pub fn add_client() {
 
     let name = Text::new("What is the clients name?").prompt();
     let server_ip = Text::new("What is the servers external ip?").prompt();
+    let default_path = match env::var("HOME") {
+        Ok(val) => val,
+        Err(e) => ".".to_string(),
+    };
+    let config_path = Text::new("Where should the client configuration be saved")
+        .with_default(&default_path)
+        .prompt();
     if let Some(ref mut config) = server_config {
         let netdev = config.netdevs.get("50-wg0");
         if let Ok(valid_name) = name {
@@ -54,7 +62,11 @@ pub fn add_client() {
                     &server_ip.expect("Invalid ip"),
                 );
                 client_config
-                    .write_to_file(format!("client-{}.conf", valid_name))
+                    .write_to_file(format!(
+                        "{}/client-{}.conf",
+                        config_path.unwrap(),
+                        valid_name
+                    ))
                     .unwrap();
 
                 let wireguard_peer_config = WireguardPeerConfig {
